@@ -21,6 +21,7 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.android.marsrealestate.network.MapsApiFilter
 import com.example.android.marsrealestate.network.MarsApi
 import com.example.android.marsrealestate.network.MarsProperty
 import kotlinx.coroutines.CoroutineScope
@@ -51,6 +52,9 @@ class OverviewViewModel : ViewModel() {
     val property:LiveData<List<MarsProperty>>
     get() = _properties
 
+    private val _navigateToSelectedProperty = MutableLiveData<MarsProperty>()
+    val navigateToSelectedProperty: LiveData<MarsProperty>
+        get() = _navigateToSelectedProperty
     private var viewModelJob = Job()
     private val coroutineScope = CoroutineScope(Dispatchers.Main+viewModelJob)
 
@@ -58,7 +62,7 @@ class OverviewViewModel : ViewModel() {
      * Call getMarsRealEstateProperties() on init so we can display status immediately.
      */
     init {
-        getMarsRealEstateProperties()
+        getMarsRealEstateProperties(MapsApiFilter.SHOW_ALL)
         _status.value = MarsApiStatus.LOADING
     }
 
@@ -66,11 +70,11 @@ class OverviewViewModel : ViewModel() {
      * Sets the value of the response LiveData to the Mars API status or the successful number of
      * Mars properties retrieved.
      */
-    private fun getMarsRealEstateProperties() {
+    private fun getMarsRealEstateProperties(filter: MapsApiFilter) {
         coroutineScope.launch {
             try{
                 _status.value = MarsApiStatus.LOADING
-            var getPropertiesDeffered = MarsApi.retrofitService.getProperties()
+            var getPropertiesDeffered = MarsApi.retrofitService.getProperties(filter.value)
             var listResult = getPropertiesDeffered.await()
            _properties.value =listResult
                 _status.value = MarsApiStatus.DONE
@@ -84,8 +88,19 @@ class OverviewViewModel : ViewModel() {
 
     }
 
+    fun updateFilter(filter:MapsApiFilter){
+        getMarsRealEstateProperties(filter)
+    }
     override fun onCleared() {
         super.onCleared()
         viewModelJob.cancel()
+    }
+
+    fun displayPropertyDetails(marsProperty: MarsProperty){
+        _navigateToSelectedProperty.value = marsProperty
+
+    }
+    fun displayPropertyDetailsComplete(){
+        _navigateToSelectedProperty.value = null
     }
 }
