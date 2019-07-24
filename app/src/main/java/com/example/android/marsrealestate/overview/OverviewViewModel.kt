@@ -17,6 +17,7 @@
 
 package com.example.android.marsrealestate.overview
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -36,11 +37,16 @@ import retrofit2.Response
 class OverviewViewModel : ViewModel() {
 
     // The internal MutableLiveData String that stores the most recent response
-    private val _response = MutableLiveData<String>()
+    private val _status = MutableLiveData<String>()
 
     // The external immutable LiveData for the response String
     val response: LiveData<String>
-        get() = _response
+        get() = _status
+
+    private val _property = MutableLiveData<MarsProperty>()
+
+    val property:LiveData<MarsProperty>
+    get() = _property
 
     private var viewModelJob = Job()
     private val coroutineScope = CoroutineScope(Dispatchers.Main+viewModelJob)
@@ -61,10 +67,13 @@ class OverviewViewModel : ViewModel() {
             try{
             var getPropertiesDeffered = MarsApi.retrofitService.getProperties()
             var listResult = getPropertiesDeffered.await()
-            _response.value = "Success: ${listResult.size} Mars properties retrieved"
+            Log.d("value set",listResult.size.toString())
+           _property.value =listResult.get(0)
             }
-            catch (t:Throwable){
-            _response.value = "Failure: "+t.message
+            catch (e:Exception){
+//            property.value = "Failure: "+t.message
+             _status.value = "Failure ${e.message}"
+                Log.d("value set",e.message.toString())
             }
         }
 
