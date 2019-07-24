@@ -34,19 +34,22 @@ import retrofit2.Response
 /**
  * The [ViewModel] that is attached to the [OverviewFragment].
  */
+
+enum class MarsApiStatus { LOADING, ERROR, DONE}
 class OverviewViewModel : ViewModel() {
 
     // The internal MutableLiveData String that stores the most recent response
-    private val _status = MutableLiveData<String>()
+    private val _status = MutableLiveData<MarsApiStatus>()
 
     // The external immutable LiveData for the response String
-    val response: LiveData<String>
+    val status: LiveData<MarsApiStatus>
         get() = _status
 
-    private val _property = MutableLiveData<MarsProperty>()
 
-    val property:LiveData<MarsProperty>
-    get() = _property
+    private val _properties = MutableLiveData<List<MarsProperty>>()
+
+    val property:LiveData<List<MarsProperty>>
+    get() = _properties
 
     private var viewModelJob = Job()
     private val coroutineScope = CoroutineScope(Dispatchers.Main+viewModelJob)
@@ -56,6 +59,7 @@ class OverviewViewModel : ViewModel() {
      */
     init {
         getMarsRealEstateProperties()
+        _status.value = MarsApiStatus.LOADING
     }
 
     /**
@@ -65,15 +69,16 @@ class OverviewViewModel : ViewModel() {
     private fun getMarsRealEstateProperties() {
         coroutineScope.launch {
             try{
+                _status.value = MarsApiStatus.LOADING
             var getPropertiesDeffered = MarsApi.retrofitService.getProperties()
             var listResult = getPropertiesDeffered.await()
-            Log.d("value set",listResult.size.toString())
-           _property.value =listResult.get(0)
+           _properties.value =listResult
+                _status.value = MarsApiStatus.DONE
             }
             catch (e:Exception){
 //            property.value = "Failure: "+t.message
-             _status.value = "Failure ${e.message}"
-                Log.d("value set",e.message.toString())
+                _status.value = MarsApiStatus.ERROR
+
             }
         }
 
